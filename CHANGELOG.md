@@ -8,6 +8,8 @@ All notable changes to this project are documented here.
 
 - Automated release builds for macOS and Linux.
 - `--no-avatar` and `--no-color` flags.
+- Animated contribution calendar with a year selector, configurable under `[contributions]`.
+- `--year`, `--interactive`, `--no-contributions` and `--no-animation` flags.
 
 ## Changed
 
