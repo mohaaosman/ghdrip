@@ -1,37 +1,55 @@
-# Ghfetch
+# ghdrip
 
-Ghfetch is a neofetch/fastfetch like tool for fetching github stats from different profiles and displaying it in a beautiful way.
+A neofetch/fastfetch-style tool for GitHub profiles. Give it a username and it
+prints the avatar, profile stats and an animated contribution calendar right in
+your terminal.
 
 ![Preview Image](assets/preview.png)
+
+> [!NOTE]
+> ghdrip is a fork of [**ghfetch**](https://github.com/Yahddyyp/ghfetch) by
+> [**Yahddyyp**](https://github.com/Yahddyyp). See [Credits](#credits).
+
+## Features
+
+- Avatar rendered with the Kitty graphics protocol
+- Profile stats: stars, followers, repos, issues, join date, company, location, Twitter, blog and bio
+- Animated contribution calendar with a year picker
+- Fields, order and colors all set from one TOML file
+- Works without a token; a GitHub token raises the rate limits
 
 ## Installation
 
 ### Requirements
 
-- A terminal that supports kitty's image rendering protocol (eg: ghostty or kitty).
+- A terminal that supports Kitty's image protocol (e.g. Kitty or Ghostty) to
+  show the avatar. Use `--no-avatar` on other terminals.
+- [Rust](https://www.rust-lang.org/tools/install) (edition 2024) when building from source.
 
 > [!NOTE]
-> Different terminals may use different variations of the kitty image protcol like ghostty using unicode placeholder and so the placement may be one to two lines off.
+> Terminals implement the Kitty image protocol differently (Ghostty uses Unicode
+> placeholders, for example), so the image may be placed a line or two off.
 
-#### Homebrew
+### Prebuilt binaries
+
+Archives for Linux and macOS (x86_64 and aarch64) are attached to each
+[release](https://github.com/mohaaosman/ghdrip/releases).
+
+### From source
 
 ```bash
-brew install Yahddyyp/tap/ghfetch
-```
-
-#### From source
-
-```bash
-git clone https://github.com/Yahddyyp/gh-fetch.git
-cd gh-fetch
+git clone https://github.com/mohaaosman/ghdrip.git
+cd ghdrip
 cargo build --release
 ```
 
-The binary will be available at:
+The binary is built at `target/release/ghfetch`. To put it on your `PATH`:
 
+```bash
+cargo install --path .
 ```
-target/release/ghfetch
-```
+
+> The binary keeps the upstream name, `ghfetch`.
 
 ## Usage
 
@@ -39,60 +57,56 @@ target/release/ghfetch
 ghfetch <username>
 ```
 
-For example:
+`<username>` can be a user or an organisation.
 
-```bash
-ghfetch yahddyyp
-```
+| Flag                  | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `--year <YEAR>`       | Show the contribution calendar for a calendar year           |
+| `-i`, `--interactive` | Flip through years with `←`/`→` (or `h`/`l`), `q` to quit    |
+| `--no-animation`      | Draw the calendar straight away                              |
+| `--no-contributions`  | Hide the contribution calendar                               |
+| `--no-avatar`         | Hide the avatar image                                        |
+| `--no-color`          | Disable colored output                                       |
+| `-h`, `--help`        | Show help                                                    |
+| `-V`, `--version`     | Show the version                                             |
 
 ### Contribution calendar
 
-Next to the info, `ghfetch` draws the contribution calendar, with the squares
-sweeping in. It goes on the right when the terminal is wide enough and below
-the info when it is not.
+The calendar is drawn to the right of the info when the terminal is wide enough,
+and below it when it is not. Without a token it is read from GitHub's public
+contributions page; with `GHFETCH_TOKEN` set it comes from the GraphQL API.
 
-```bash
-ghfetch <username> --year 2024       # a calendar year instead of the last year
-ghfetch <username> --interactive     # flip through the years with ←/→ (or h/l), q to quit
-ghfetch <username> --no-animation    # draw it straight away
-ghfetch <username> --no-contributions
-```
+### GitHub token
 
-Without a token the calendar comes from GitHub's public contributions page.
-With `GHFETCH_TOKEN` set it comes from the GraphQL API.
-
-### Github Token
-
-`ghfetch` works without authentication, but GitHub's API has stricter
-rate limits for unauthenticated requests.
-
-You can provide a GitHub **Personal Access Token** through:
+Unauthenticated requests to the GitHub API have strict rate limits. Set a
+[personal access token](https://github.com/settings/tokens) to raise them. It
+needs no scopes.
 
 ```bash
 export GHFETCH_TOKEN="your_token"
 ```
 
-You do not need to give the personal access token any sort of permissions.
-`ghfetch` will use the token for authenticated GitHub API requests.
+## Configuration
 
-### Configuration
-
-The configuration file is located at:
+The config file lives at:
 
 ```
 ~/.config/ghfetch/config.toml
 ```
 
-You can customize which fields are displayed in what order:
+### Fields
+
+Choose which fields are shown and in what order:
 
 ```toml
 fields = [
     "user",
-    { underline = "user" }, # can take any sort of field or integer value
+    { underline = "user" }, # a field name or a fixed width
     "id",
     "total_stars",
     "followers",
     "repos",
+    "issues",
     "joined",
     "company",
     "location",
@@ -103,7 +117,7 @@ fields = [
 ]
 ```
 
-Colors can be by customized:
+### Colors
 
 ```toml
 name = { r = 203, g = 166, b = 247 }
@@ -113,6 +127,7 @@ id = { r = 137, g = 220, b = 235 }
 total_stars = { r = 166, g = 227, b = 161 }
 followers = { r = 250, g = 179, b = 135 }
 repos = { r = 116, g = 199, b = 236 }
+issues = { r = 249, g = 226, b = 175 }
 joined = { r = 137, g = 220, b = 235 }
 company = { r = 250, g = 179, b = 135 }
 location = { r = 137, g = 220, b = 235 }
@@ -120,13 +135,13 @@ twitter = { r = 203, g = 166, b = 247 }
 blog = { r = 203, g = 166, b = 247 }
 ```
 
-Customise the contribution calendar:
+### Contribution calendar
 
 ```toml
 [contributions]
 enabled = true
-# "auto" draws it on the right when the terminal is wide enough, else below
-# "right" squeezes it on the right by showing fewer weeks
+# "auto" puts it on the right when the terminal is wide enough, else below
+# "right" keeps it on the right by showing fewer weeks
 position = "auto"
 animate = true
 # Gap between the info and the calendar
@@ -141,7 +156,7 @@ colors = [
 ]
 ```
 
-And customise how the image appears:
+### Image
 
 ```toml
 [image]
@@ -151,4 +166,19 @@ left_gap = 1
 right_gap = 3
 ```
 
-<p align="center"><a href="https://github.com/yahddyyp/ghfetch/blob/main/LICENSE"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=MIT&logoColor=cdd6f4&colorA=1e1e2e&colorB=cba6f7"/></a></p>
+## Credits
+
+ghdrip is built on [**ghfetch**](https://github.com/Yahddyyp/ghfetch), created
+by [**Yahddyyp**](https://github.com/Yahddyyp). The original design, the
+avatar rendering, the stats display and the configuration system all come from
+their work. If you like this project, please go star the original.
+
+The upstream version is also available through Homebrew:
+
+```bash
+brew install Yahddyyp/tap/ghfetch
+```
+
+## License
+
+Released under the [MIT License](LICENSE), copyright © 2026 Yahddyyp.
