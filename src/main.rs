@@ -27,7 +27,7 @@ mod user_info;
 #[command(
     name = "ghdrip",
     about = "A way to beautifully display your github stats",
-    author = "Yahddyyp"
+    author = "mohaaosman"
 )]
 #[command(version)]
 pub struct Cli {

@@ -31,11 +31,6 @@ your terminal.
 > Terminals implement the Kitty image protocol differently (Ghostty uses Unicode
 > placeholders, for example), so the image may be placed a line or two off.
 
-### Prebuilt binaries
-
-Archives for Linux and macOS (x86_64 and aarch64) are attached to each
-[release](https://github.com/mohaaosman/ghdrip/releases).
-
 ### From source
 
 ```bash
