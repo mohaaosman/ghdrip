@@ -45,6 +45,22 @@ For example:
 ghfetch yahddyyp
 ```
 
+### Contribution calendar
+
+Next to the info, `ghfetch` draws the contribution calendar, with the squares
+sweeping in. It goes on the right when the terminal is wide enough and below
+the info when it is not.
+
+```bash
+ghfetch <username> --year 2024       # a calendar year instead of the last year
+ghfetch <username> --interactive     # flip through the years with ←/→ (or h/l), q to quit
+ghfetch <username> --no-animation    # draw it straight away
+ghfetch <username> --no-contributions
+```
+
+Without a token the calendar comes from GitHub's public contributions page.
+With `GHFETCH_TOKEN` set it comes from the GraphQL API.
+
 ### Github Token
 
 `ghfetch` works without authentication, but GitHub's API has stricter
@@ -102,6 +118,27 @@ company = { r = 250, g = 179, b = 135 }
 location = { r = 137, g = 220, b = 235 }
 twitter = { r = 203, g = 166, b = 247 }
 blog = { r = 203, g = 166, b = 247 }
+```
+
+Customise the contribution calendar:
+
+```toml
+[contributions]
+enabled = true
+# "auto" draws it on the right when the terminal is wide enough, else below
+# "right" squeezes it on the right by showing fewer weeks
+position = "auto"
+animate = true
+# Gap between the info and the calendar
+gap = 4
+# Five colors from "no contributions" to "most contributions"
+colors = [
+    { r = 33, g = 38, b = 45 },
+    { r = 14, g = 68, b = 41 },
+    { r = 0, g = 109, b = 50 },
+    { r = 38, g = 166, b = 65 },
+    { r = 57, g = 211, b = 83 },
+]
 ```
 
 And customise how the image appears:

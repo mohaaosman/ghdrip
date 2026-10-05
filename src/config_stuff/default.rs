@@ -44,6 +44,21 @@ image_columns = 24
 image_rows = 12
 left_gap = 1
 right_gap = 3
+
+[contributions]
+enabled = true
+# "auto" draws it on the right when the terminal is wide enough, else below
+position = "auto"
+animate = true
+gap = 4
+# Five colors from "no contributions" to "most contributions"
+# colors = [
+#     { r = 33, g = 38, b = 45 },
+#     { r = 14, g = 68, b = 41 },
+#     { r = 0, g = 109, b = 50 },
+#     { r = 38, g = 166, b = 65 },
+#     { r = 57, g = 211, b = 83 },
+# ]
 "#;
 
     std::fs::write(path, default_contents)

@@ -1,14 +1,21 @@
-use crate::config_stuff::{Colors, Image, load_config};
-use crate::display_info::print_user_info;
+use crate::config_stuff::{Colors, Contributions, Image, Position, load_config};
+use crate::contributions::{
+    HEIGHT, Painter, Period, Placement, choose_layout, get_contributions, print_static,
+    select_years, visible_width, weeks_needed,
+};
+use crate::display_info::{indent_width, info_lines, print_user_info};
 use crate::get_avatar_image::get_image;
 use crate::total_issues::get_issues;
 use crate::totalstars::get_total_stars;
 use crate::user_info::{UserInfo, get_user_info};
 use anyhow::Result;
+use chrono::Datelike;
 use clap::Parser;
 use std::env;
+use std::io::IsTerminal;
 
 mod config_stuff;
+mod contributions;
 mod display_info;
 mod errors;
 mod get_avatar_image;
@@ -34,6 +41,22 @@ pub struct Cli {
     /// Disable the colored output
     #[arg(long)]
     pub no_color: bool,
+
+    /// Show the contribution calendar of this year instead of the last year
+    #[arg(long, value_name = "YEAR")]
+    pub year: Option<i32>,
+
+    /// Pick the year of the contribution calendar with the arrow keys
+    #[arg(short, long)]
+    pub interactive: bool,
+
+    /// Do not display the contribution calendar
+    #[arg(long)]
+    pub no_contributions: bool,
+
+    /// Draw the contribution calendar without animating it
+    #[arg(long)]
+    pub no_animation: bool,
 }
 
 #[tokio::main]
@@ -68,6 +91,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let image = Image::from_config(&config);
+    let contributions = Contributions::from_config(&config);
+
+    let today = chrono::Local::now().date_naive();
+    let period = cli.year.map(Period::Year).unwrap_or(Period::LastYear);
+    let show_calendar = contributions.enabled && !cli.no_contributions;
 
     // If pat token is avalible use that or else use unauthorized
     // requests and build the client instance
@@ -79,13 +107,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => octocrab::Octocrab::builder().build()?,
     };
 
-    let (user_result, stars_result, issues_result) = tokio::join!(
+    let (user_result, stars_result, issues_result, calendar_result) = tokio::join!(
         get_user_info(username, &octocrab, has_token),
         get_total_stars(&octocrab, username),
-        get_issues(&octocrab, username)
+        get_issues(&octocrab, username),
+        async {
+            match show_calendar {
+                true => {
+                    Some(get_contributions(&octocrab, username, has_token, period, today).await)
+                }
+                false => None,
+            }
+        }
     );
 
     let user = user_result?;
+
+    // Years to pick from, newest first, like the list next to github's calendar
+    let years: Vec<i32> = (user.created_at.year()..=today.year()).rev().collect();
+    if let Some(year) = cli.year
+        && !years.contains(&year)
+    {
+        eprintln!(
+            "No contributions for {year}, pick a year from {} to {}",
+            user.created_at.year(),
+            today.year()
+        );
+        std::process::exit(1);
+    }
+
+    // Organisations do not have a contribution calendar
+    let is_user = user.r#type == "User";
     let total_stars = stars_result;
     let total_issues = issues_result;
 
@@ -121,11 +173,114 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         avatar_url: format!("{}&s=200", user.avatar_url),
     };
 
-    if !cli.no_avatar {
+    let show_avatar = !cli.no_avatar;
+
+    if show_avatar {
         get_image(&user_info.avatar_url, image_id, &image).await?;
     }
 
-    print_user_info(&user_info, &fields, &colors, &image, !cli.no_avatar);
+    let lines = info_lines(&user_info, &fields, &colors);
+
+    let calendar = match calendar_result {
+        Some(Ok(calendar)) if is_user => Some(calendar),
+        Some(Err(e)) if is_user => {
+            print_user_info(lines, &image, show_avatar, 0);
+            eprintln!("Could not load the contribution calendar: {e:#}");
+            return Ok(());
+        }
+        _ => None,
+    };
+
+    let Some(calendar) = calendar else {
+        print_user_info(lines, &image, show_avatar, 0);
+        return Ok(());
+    };
+
+    // Moving the cursor around to draw and animate only works in a terminal
+    let is_tty = std::io::stdout().is_terminal();
+    let (term_width, term_height) = crossterm::terminal::size()
+        .map(|(w, h)| (w as usize, h as usize))
+        .unwrap_or((120, 40));
+
+    let interactive = cli.interactive && is_tty;
+    let animate = contributions.animate && !cli.no_animation && is_tty;
+
+    let indent = indent_width(&image, show_avatar);
+    let info_width = lines
+        .iter()
+        .take(HEIGHT)
+        .map(|line| visible_width(line))
+        .max()
+        .unwrap_or(0);
+    let right_col = indent + info_width + contributions.gap;
+    let below_col = if show_avatar { image.left_gap } else { 0 };
+    let weeks = weeks_needed(period, today, interactive);
+
+    // Drawing on the right needs the whole info block on screen at once
+    let block_height = lines.len().max(HEIGHT).max(if show_avatar {
+        image.image_rows.saturating_sub(1)
+    } else {
+        0
+    }) + 1;
+    let position = match contributions.position {
+        _ if !is_tty || block_height >= term_height => Position::Below,
+        position => position,
+    };
+
+    let Some(layout) = choose_layout(position, term_width, right_col, below_col, weeks) else {
+        print_user_info(lines, &image, show_avatar, 0);
+        return Ok(());
+    };
+
+    let painter = match layout.placement {
+        Placement::Right => {
+            let rows_up = print_user_info(lines, &image, show_avatar, HEIGHT);
+            Painter::new(
+                rows_up,
+                right_col,
+                &layout,
+                colors.enabled,
+                contributions.levels,
+                years,
+                animate,
+            )
+        }
+
+        Placement::Below if !is_tty || HEIGHT + 1 >= term_height => {
+            print_user_info(lines, &image, show_avatar, 0);
+            print_static(
+                &calendar,
+                &layout,
+                colors.enabled,
+                contributions.levels,
+                &years,
+                today,
+                below_col,
+            );
+            return Ok(());
+        }
+
+        Placement::Below => {
+            print_user_info(lines, &image, show_avatar, 0);
+            // Make room for the calendar and keep the blank line at the bottom
+            print!("{}", "\n".repeat(HEIGHT + 1));
+            Painter::new(
+                HEIGHT + 1,
+                below_col,
+                &layout,
+                colors.enabled,
+                contributions.levels,
+                years,
+                animate,
+            )
+        }
+    };
+
+    painter.show(&calendar, today, interactive)?;
+
+    if interactive {
+        select_years(&painter, &octocrab, username, has_token, calendar, today).await?;
+    }
 
     Ok(())
 }

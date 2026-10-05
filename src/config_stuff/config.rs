@@ -1,4 +1,5 @@
 use crate::config_stuff::colors::ColorsConfig;
+use crate::config_stuff::contributions::ContributionsConfig;
 use crate::config_stuff::default::write_default_config;
 use crate::config_stuff::fields::Field;
 use crate::config_stuff::image::ImageConfig;
@@ -13,6 +14,8 @@ pub struct Config {
     pub colors: ColorsConfig,
     #[serde(default)]
     pub image: ImageConfig,
+    #[serde(default)]
+    pub contributions: ContributionsConfig,
 }
 
 /// Load the config from file.

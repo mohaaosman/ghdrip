@@ -20,14 +20,8 @@ fn format_text(text: &str, color: (u8, u8, u8), enabled: bool) -> String {
     colorize(&text, color, enabled)
 }
 
-/// Print and display the user info nicely.
-pub fn print_user_info(
-    info: &UserInfo,
-    fields: &[Field],
-    colors: &Colors,
-    layout: &Image,
-    show_avatar: bool,
-) {
+/// Build the lines of user info that go next to the avatar.
+pub fn info_lines(info: &UserInfo, fields: &[Field], colors: &Colors) -> Vec<String> {
     let mut lines = Vec::new();
 
     for field in fields {
@@ -122,12 +116,33 @@ pub fn print_user_info(
         }
     }
 
-    let indent = if show_avatar {
-        " ".repeat(layout.left_gap + layout.image_columns + layout.right_gap)
+    lines
+}
+
+/// How far from the left the info text starts.
+pub fn indent_width(layout: &Image, show_avatar: bool) -> usize {
+    if show_avatar {
+        layout.left_gap + layout.image_columns + layout.right_gap
     } else {
         // No left gap for no avatar
-        String::new()
-    };
+        0
+    }
+}
+
+/// Print and display the user info nicely, making the block at least
+/// `min_height` lines tall. Returns how many lines above the cursor the
+/// block starts once it is printed.
+pub fn print_user_info(
+    mut lines: Vec<String>,
+    layout: &Image,
+    show_avatar: bool,
+    min_height: usize,
+) -> usize {
+    if lines.len() < min_height {
+        lines.resize(min_height, String::new());
+    }
+
+    let indent = " ".repeat(indent_width(layout, show_avatar));
 
     if show_avatar {
         print!("\x1b[{}A\r", layout.image_rows.saturating_sub(1));
@@ -152,6 +167,8 @@ pub fn print_user_info(
     }
 
     print!("\n");
+
+    text_line_count + extra + 1
 }
 
 /// Give the field width for underline.
