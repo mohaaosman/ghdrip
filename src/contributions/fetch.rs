@@ -156,7 +156,7 @@ async fn from_html(username: &str, from: NaiveDate, to: NaiveDate) -> Result<Cal
 
     let html = reqwest::Client::new()
         .get(&url)
-        .header(reqwest::header::USER_AGENT, "ghfetch")
+        .header(reqwest::header::USER_AGENT, "ghdrip")
         .send()
         .await
         .with_context(|| "failed to download the contribution calendar")?

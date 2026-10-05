@@ -27,7 +27,7 @@ pub async fn get_user_info(
     if token {
         match octocrab.current().user().await {
             Err(octocrab::Error::GitHub { .. }) => {
-                eprintln!("GHFETCH_TOKEN is not valid");
+                eprintln!("GHDRIP_TOKEN is not valid");
                 std::process::exit(1);
             }
 

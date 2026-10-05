@@ -1,6 +1,6 @@
 # ghdrip
 
-A neofetch/fastfetch-style tool for GitHub profiles. Give it a username and it
+**GH Drip**, short for GitHub Drip. A neofetch/fastfetch-style tool for GitHub profiles. Give it a username and it
 prints the avatar, profile stats and an animated contribution calendar right in
 your terminal.
 
@@ -12,8 +12,9 @@ your terminal.
 
 ## Features
 
-- Avatar rendered with the Kitty graphics protocol
+- Avatar rendered with the Kitty graphics protocol, skipped if it cannot be loaded
 - Profile stats: stars, followers, repos, issues, join date, company, location, Twitter, blog and bio
+- Clickable links in the bio, blog and Twitter fields
 - Animated contribution calendar with a year picker
 - Fields, order and colors all set from one TOML file
 - Works without a token; a GitHub token raises the rate limits
@@ -43,38 +44,39 @@ cd ghdrip
 cargo build --release
 ```
 
-The binary is built at `target/release/ghfetch`. To put it on your `PATH`:
+The binary is built at `target/release/ghdrip`. To put it on your `PATH`:
 
 ```bash
 cargo install --path .
 ```
 
-> The binary keeps the upstream name, `ghfetch`.
-
 ## Usage
 
 ```bash
-ghfetch <username>
+ghdrip <username>
 ```
 
 `<username>` can be a user or an organisation.
 
-| Flag                  | Description                                                  |
-| --------------------- | ------------------------------------------------------------ |
-| `--year <YEAR>`       | Show the contribution calendar for a calendar year           |
-| `-i`, `--interactive` | Flip through years with `←`/`→` (or `h`/`l`), `q` to quit    |
-| `--no-animation`      | Draw the calendar straight away                              |
-| `--no-contributions`  | Hide the contribution calendar                               |
-| `--no-avatar`         | Hide the avatar image                                        |
-| `--no-color`          | Disable colored output                                       |
-| `-h`, `--help`        | Show help                                                    |
-| `-V`, `--version`     | Show the version                                             |
+In a terminal, ghdrip stays open after drawing so you can flip through years
+with `←`/`→` (or `h`/`l`). Press `q`, `Esc` or `Enter` to quit.
+
+| Flag                 | Description                                        |
+| -------------------- | -------------------------------------------------- |
+| `--year <YEAR>`      | Show the contribution calendar for a calendar year |
+| `--no-interactive`   | Exit after drawing instead of waiting for keys     |
+| `--no-animation`     | Draw the calendar straight away                    |
+| `--no-contributions` | Hide the contribution calendar                     |
+| `--no-avatar`        | Hide the avatar image                              |
+| `--no-color`         | Disable colored output and links                   |
+| `-h`, `--help`       | Show help                                          |
+| `-V`, `--version`    | Show the version                                   |
 
 ### Contribution calendar
 
 The calendar is drawn to the right of the info when the terminal is wide enough,
 and below it when it is not. Without a token it is read from GitHub's public
-contributions page; with `GHFETCH_TOKEN` set it comes from the GraphQL API.
+contributions page; with `GHDRIP_TOKEN` set it comes from the GraphQL API.
 
 ### GitHub token
 
@@ -83,7 +85,7 @@ Unauthenticated requests to the GitHub API have strict rate limits. Set a
 needs no scopes.
 
 ```bash
-export GHFETCH_TOKEN="your_token"
+export GHDRIP_TOKEN="your_token"
 ```
 
 ## Configuration
@@ -91,7 +93,7 @@ export GHFETCH_TOKEN="your_token"
 The config file lives at:
 
 ```
-~/.config/ghfetch/config.toml
+~/.config/ghdrip/config.toml
 ```
 
 ### Fields

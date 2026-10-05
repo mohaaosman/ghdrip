@@ -25,7 +25,7 @@ mod user_info;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "ghfetch",
+    name = "ghdrip",
     about = "A way to beautifully display your github stats",
     author = "Yahddyyp"
 )]
@@ -46,9 +46,9 @@ pub struct Cli {
     #[arg(long, value_name = "YEAR")]
     pub year: Option<i32>,
 
-    /// Pick the year of the contribution calendar with the arrow keys
-    #[arg(short, long)]
-    pub interactive: bool,
+    /// Exit after drawing instead of waiting to pick a year with the arrow keys
+    #[arg(long)]
+    pub no_interactive: bool,
 
     /// Do not display the contribution calendar
     #[arg(long)]
@@ -69,8 +69,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let username = &cli.username;
 
-    // Take GHFETCH_TOKEN from env, if it returns "" then take it as not being there
-    let token = env::var("GHFETCH_TOKEN")
+    // Take GHDRIP_TOKEN from env, if it returns "" then take it as not being there
+    let token = env::var("GHDRIP_TOKEN")
         .ok()
         .filter(|token| !token.is_empty());
 
@@ -173,11 +173,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         avatar_url: format!("{}&s=200", user.avatar_url),
     };
 
-    let show_avatar = !cli.no_avatar;
-
-    if show_avatar {
-        get_image(&user_info.avatar_url, image_id, &image).await?;
-    }
+    let show_avatar =
+        !cli.no_avatar && get_image(&user_info.avatar_url, image_id, &image).await.is_ok();
 
     let lines = info_lines(&user_info, &fields, &colors);
 
@@ -202,7 +199,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map(|(w, h)| (w as usize, h as usize))
         .unwrap_or((120, 40));
 
-    let interactive = cli.interactive && is_tty;
+    let interactive = !cli.no_interactive && is_tty && std::io::stdin().is_terminal();
     let animate = contributions.animate && !cli.no_animation && is_tty;
 
     let indent = indent_width(&image, show_avatar);

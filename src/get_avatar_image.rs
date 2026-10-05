@@ -61,7 +61,7 @@ pub async fn get_image(url: &str, image_id: u32, layout: &Image) -> Result<()> {
     println!();
     print!("{}", " ".repeat(layout.left_gap));
     print!(
-        "\x1b_Ga=p,i={},c={},r={},q=1;\x1b\\",
+        "\x1b_Ga=p,i={},c={},r={},q=2;\x1b\\",
         image_id, layout.image_columns, layout.image_rows
     );
 
@@ -80,14 +80,14 @@ pub fn send_escape_sequence(data: &[u8], first: bool, more: bool, image_id: u32)
     // If this is the first chunk f=100 else no
     if first {
         print!(
-            "\x1b_Ga=t,q=1,f=100,i={},m={};{}\x1b\\",
+            "\x1b_Ga=t,q=2,f=100,i={},m={};{}\x1b\\",
             image_id,
             more,
             std::str::from_utf8(data)?
         );
     } else {
         print!(
-            "\x1b_Ga=t,q=1,i={},m={};{}\x1b\\",
+            "\x1b_Ga=t,q=2,i={},m={};{}\x1b\\",
             image_id,
             more,
             std::str::from_utf8(data)?

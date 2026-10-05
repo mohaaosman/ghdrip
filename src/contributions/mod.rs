@@ -236,6 +236,10 @@ async fn selector_loop(
     let mut calendars: HashMap<Period, Calendar> = HashMap::new();
     calendars.insert(period, first);
 
+    while event::poll(Duration::ZERO)? {
+        event::read()?;
+    }
+
     loop {
         let Event::Key(key) = event::read()? else {
             continue;

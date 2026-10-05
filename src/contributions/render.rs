@@ -388,7 +388,13 @@ pub fn visible_width(text: &str) -> usize {
     let mut width = 0;
     let mut chars = text.chars();
     while let Some(c) = chars.next() {
-        if c == '\x1b' {
+        if c == '\x1b' && chars.clone().next() == Some(']') {
+            for c in chars.by_ref() {
+                if c == '\x07' {
+                    break;
+                }
+            }
+        } else if c == '\x1b' {
             // Skip the escape sequence up to its final letter
             for c in chars.by_ref() {
                 if c.is_ascii_alphabetic() {

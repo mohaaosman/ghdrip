@@ -14,6 +14,40 @@ fn colorize(text: &str, color: (u8, u8, u8), enabled: bool) -> String {
     }
 }
 
+fn hyperlink(text: &str, url: &str, enabled: bool) -> String {
+    if enabled {
+        format!("\x1b]8;;{url}\x07{text}\x1b]8;;\x07")
+    } else {
+        text.to_string()
+    }
+}
+
+fn link_bio(bio: &str, enabled: bool) -> String {
+    bio.split(' ')
+        .map(|word| {
+            let target = word.trim_end_matches(|c: char| ".,;:!?)".contains(c));
+            let url = match target.strip_prefix('@') {
+                _ if target.starts_with("http://") || target.starts_with("https://") => {
+                    target.to_string()
+                }
+                Some(name)
+                    if !name.is_empty()
+                        && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') =>
+                {
+                    format!("https://github.com/{name}")
+                }
+                _ => return word.to_string(),
+            };
+            format!(
+                "{}{}",
+                hyperlink(target, &url, enabled),
+                &word[target.len()..]
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 /// Format the text.
 fn format_text(text: &str, color: (u8, u8, u8), enabled: bool) -> String {
     let text = format!("{:<12}", text);
@@ -86,15 +120,19 @@ pub fn info_lines(info: &UserInfo, fields: &[Field], colors: &Colors) -> Vec<Str
                 format!(
                     "{} @{}",
                     format_text("Twitter", colors.twitter, colors.enabled),
-                    t
+                    hyperlink(t, &format!("https://x.com/{t}"), colors.enabled)
                 )
             }),
 
             Field::Blog => info.blog.as_ref().map(|bl| {
+                let url = match bl.starts_with("http://") || bl.starts_with("https://") {
+                    true => bl.clone(),
+                    false => format!("https://{bl}"),
+                };
                 format!(
                     "{} {}",
                     format_text("Blog", colors.blog, colors.enabled),
-                    bl
+                    hyperlink(bl, &url, colors.enabled)
                 )
             }),
 
@@ -108,7 +146,7 @@ pub fn info_lines(info: &UserInfo, fields: &[Field], colors: &Colors) -> Vec<Str
                 .bio
                 .as_deref()
                 .filter(|bio| !bio.trim().is_empty())
-                .map(str::to_owned),
+                .map(|bio| link_bio(bio, colors.enabled)),
         };
 
         if let Some(line) = line {

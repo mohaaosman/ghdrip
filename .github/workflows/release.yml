@@ -55,17 +55,17 @@ jobs:
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          ARCHIVE="ghfetch-v${VERSION}-${{ matrix.target }}.tar.gz"
+          ARCHIVE="ghdrip-v${VERSION}-${{ matrix.target }}.tar.gz"
 
           mkdir package
-          cp "target/${{ matrix.target }}/release/ghfetch" package/
+          cp "target/${{ matrix.target }}/release/ghdrip" package/
 
-          tar -czf "$ARCHIVE" -C package ghfetch
+          tar -czf "$ARCHIVE" -C package ghdrip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: ghfetch-${{ matrix.target }}
+          name: ghdrip-${{ matrix.target }}
           path: "*.tar.gz"
 
   release:
@@ -81,7 +81,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           path: artifacts
-          pattern: ghfetch-*
+          pattern: ghdrip-*
           merge-multiple: true
 
       - name: Generate checksums
@@ -121,5 +121,5 @@ jobs:
           gh release create "${GITHUB_REF_NAME}" \
             artifacts/*.tar.gz \
             artifacts/SHA256SUMS \
-            --title "ghfetch ${GITHUB_REF_NAME}" \
+            --title "ghdrip ${GITHUB_REF_NAME}" \
             --notes-file RELEASE_NOTES.md

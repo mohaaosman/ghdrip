@@ -21,7 +21,7 @@ pub struct Config {
 /// Load the config from file.
 pub fn load_config() -> Result<Config> {
     let path = match dirs::home_dir() {
-        Some(home) => home.join(".config").join("ghfetch").join("config.toml"),
+        Some(home) => home.join(".config").join("ghdrip").join("config.toml"),
         None => anyhow::bail!("Could not find home directory"),
     };
 
